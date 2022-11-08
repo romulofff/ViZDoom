@@ -64,6 +64,7 @@ class VizdoomEnv(gym.Env):
         self.game = vzd.DoomGame()
         self.game.load_config(level)
         self.game.set_window_visible(False)
+        self.game.set_audio_buffer_size(self.frame_skip)
 
         screen_format = self.game.get_screen_format()
         if screen_format != vzd.ScreenFormat.RGB24 and screen_format != vzd.ScreenFormat.GRAY8:
@@ -81,6 +82,7 @@ class VizdoomEnv(gym.Env):
         self.depth = self.game.is_depth_buffer_enabled()
         self.labels = self.game.is_labels_buffer_enabled()
         self.automap = self.game.is_automap_buffer_enabled()
+        self.audio = self.game.is_audio_buffer_enabled()
 
         # parse buttons defined by config file
         self.__parse_available_buttons()
@@ -170,6 +172,8 @@ class VizdoomEnv(gym.Env):
                 observation["automap"] = self.state.automap_buffer
                 if self.channels == 1:
                     observation["automap"] =self.state.automap_buffer[..., None]
+            if self.audio:
+                observation["audio"] = self.state.audio_buffer
             if self.num_game_variables > 0:
                 observation["gamevariables"] = self.state.game_variables.astype(np.float32)
         else:
@@ -357,6 +361,17 @@ class VizdoomEnv(gym.Env):
                     self.channels
                 ),
                 dtype=np.uint8,
+            )
+
+        if self.audio:
+            sampling_rate = self.game.get_audio_sampling_rate()
+            aud_len = int((1260 / 44100/sampling_rate)) * self.frame_skip
+            sound_high = [[32767,32767]] * aud_len
+            sound_low = [[-32767,-32767]] * aud_len
+            spaces["audio"] = gym.spaces.Box(
+                low=np.array(sound_low, dtype=np.int16), 
+                high=np.array(sound_high, dtype=np.int16),
+                dtype=np.int16,
             )
 
         self.num_game_variables = self.game.get_available_game_variables_size()
