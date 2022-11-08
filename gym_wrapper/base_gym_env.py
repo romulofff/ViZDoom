@@ -116,7 +116,7 @@ class VizdoomEnv(gym.Env):
         terminated = self.game.is_episode_finished()
         truncated = False # Trunctation to be handled by the TimeLimit wrapper
 
-        return self.__collect_observations(), reward, terminated, truncated, {}
+        return self.__collect_observations(), reward, terminated, {}
 
     def __parse_binary_buttons(self, env_action, agent_action):
         if self.num_binary_buttons != 0:
@@ -156,7 +156,7 @@ class VizdoomEnv(gym.Env):
         self.game.new_episode()
         self.state = self.game.get_state()
 
-        return self.__collect_observations(), {}
+        return self.__collect_observations()
 
     def __collect_observations(self):
         observation = {}
@@ -365,9 +365,13 @@ class VizdoomEnv(gym.Env):
 
         if self.audio:
             sampling_rate = self.game.get_audio_sampling_rate()
-            aud_len = int((1260 / 44100/sampling_rate)) * self.frame_skip
+            aud_len = int((1260 / (44100/sampling_rate))) * self.frame_skip
             sound_high = [[32767,32767]] * aud_len
             sound_low = [[-32767,-32767]] * aud_len
+            print("SAMPLING RATE: {}".format(sampling_rate))
+            print("AUD LEN: {}".format(aud_len))
+            # print("SOUND HIGH: {}".format(sound_high))
+            # print("SOUND LOW: {}".format(sound_low))
             spaces["audio"] = gym.spaces.Box(
                 low=np.array(sound_low, dtype=np.int16), 
                 high=np.array(sound_high, dtype=np.int16),
